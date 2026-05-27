@@ -1,68 +1,78 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import {useState} from 'react';
-
-const drivers = [
-  {id:1,name:'Juan Pérez',email:'juan@example.com',phone:'+51 987 654 321',status:'aprobado',totalTrips:145,rating:4.8},
-  {id:2,name:'María García',email:'maria@example.com',phone:'+51 987 654 322',status:'aprobado',totalTrips:98,rating:4.6},
-  {id:3,name:'Carlos López',email:'carlos@example.com',phone:'+51 987 654 323',status:'pendiente',totalTrips:0,rating:0},
-  {id:4,name:'Ana Martínez',email:'ana@example.com',phone:'+51 987 654 324',status:'aprobado',totalTrips:234,rating:4.9},
-  {id:5,name:'Roberto Sánchez',email:'roberto@example.com',phone:'+51 987 654 325',status:'rechazado',totalTrips:0,rating:2.1}
-];
+import Badge from '@/components/ui/Badge';
+import { drivers } from '@/lib/mock-data';
+import { Search, Filter } from 'lucide-react';
 
 export default function DriversPage() {
   const [search, setSearch] = useState('');
-  const filtered = drivers.filter(d => d.name.toLowerCase().includes(search.toLowerCase()) || d.email.toLowerCase().includes(search.toLowerCase()));
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+
+  const filtered = drivers.filter(d => {
+    const matchesSearch = d.name.toLowerCase().includes(search.toLowerCase()) || d.email.includes(search);
+    const matchesStatus = !statusFilter || d.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Gestión de Conductores</h1>
-        <p className="text-gray-600 mt-1">Administra y aprueba conductores</p>
+        <p className="text-gray-600 mt-1">Administra, aprueba y monitorea conductores</p>
       </div>
 
-      <input
-        type="text"
-        placeholder="Buscar conductor..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 w-full max-w-xs"
-      />
+      {/* Filters */}
+      <div className="flex gap-3 flex-wrap">
+        <div className="flex-1 min-w-xs relative">
+          <Search className="absolute left-3 top-3 text-gray-400" size={20} />
+          <input
+            type="text"
+            placeholder="Buscar por nombre o email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+          />
+        </div>
+        <select
+          value={statusFilter || ''}
+          onChange={(e) => setStatusFilter(e.target.value || null)}
+          className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+        >
+          <option value="">Todos los estados</option>
+          <option value="aprobado">Aprobados</option>
+          <option value="pendiente">Pendientes</option>
+          <option value="rechazado">Rechazados</option>
+        </select>
+      </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      {/* Table */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <table className="w-full">
-          <thead className="bg-gray-50">
+          <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Nombre</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Email</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Teléfono</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Estado</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Viajes</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Rating</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Acciones</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Nombre</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Email</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Teléfono</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Estado</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Viajes</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Rating</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Acciones</th>
             </tr>
           </thead>
-          <tbody>
-            {filtered.map((d) => (
-              <tr key={d.id} className="border-b hover:bg-gray-50">
-                <td className="px-6 py-4 font-medium text-gray-900">{d.name}</td>
-                <td className="px-6 py-4 text-gray-600">{d.email}</td>
-                <td className="px-6 py-4 text-gray-600">{d.phone}</td>
+          <tbody className="divide-y divide-gray-200">
+            {filtered.map((driver) => (
+              <tr key={driver.id} className="hover:bg-gray-50 transition-colors">
+                <td className="px-6 py-4 font-medium text-gray-900">{driver.name}</td>
+                <td className="px-6 py-4 text-gray-600">{driver.email}</td>
+                <td className="px-6 py-4 text-gray-600">{driver.phone}</td>
+                <td className="px-6 py-4"><Badge variant={driver.status}>{driver.status}</Badge></td>
+                <td className="px-6 py-4 text-gray-600">{driver.totalTrips}</td>
+                <td className="px-6 py-4">⭐ {driver.rating || '-'}</td>
                 <td className="px-6 py-4">
-                  <span className={`text-xs font-medium px-3 py-1 rounded-full ${
-                    d.status === 'aprobado' ? 'bg-green-100 text-green-700'
-                    : d.status === 'pendiente' ? 'bg-yellow-100 text-yellow-700'
-                    : 'bg-red-100 text-red-700'
-                  }`}>
-                    {d.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-gray-600">{d.totalTrips}</td>
-                <td className="px-6 py-4">{d.rating > 0 ? `⭐ ${d.rating}` : '-'}</td>
-                <td className="px-6 py-4">
-                  <Link href={`/drivers/${d.id}`} className="text-purple-600 font-medium text-sm">
-                    Ver
+                  <Link href={`/drivers/${driver.id}`} className="text-purple-600 hover:text-purple-700 font-medium text-sm">
+                    Ver Perfil
                   </Link>
                 </td>
               </tr>
